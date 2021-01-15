@@ -15,129 +15,13 @@ class Common {
   static final listCategories = <Category>[];
   static final listArticles = <Article>[];
   static final listOperations = <Operation>[];
-  static final listStock = <Stock>[];
+  // static final listStock = <Stock>[];
+  static final listStock = {"store": {}, "c1": {}, "c2": {}};
   static Store currentStore;
 
   static final List<Store> listStores = <Store>[];
 
-  static void openCategoryDialog(BuildContext context, Category category, {void Function(void Function() fn) refresh}) {
-    showDialog(
-        context: context,
-        builder: (currentContext) => Dialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-              elevation: 10,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Title(
-                      child: Text(
-                        category.title,
-                        style: getAppStyles.tsHeader2,
-                      ),
-                      color: getAppColors.primary,
-                      title: category.title,
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    Text(
-                      category.description,
-                      style: getAppStyles.tsBody1,
-                    ),
-                    SizedBox(
-                      height: 15,
-                    ),
-                    category.parentId == null
-                        ? FlatButton.icon(
-                            onPressed: () {
-                              Navigator.pop(currentContext);
-                              openAddCategoryDialog(context, parent: category, refresh: refresh);
-                            },
-                            icon: Icon(Icons.add),
-                            label: Text("Ajouter une sous categorie"))
-                        : FlatButton.icon(
-                            onPressed: () {
-                              Navigator.pop(currentContext);
-                              openAddArticleDialog(context, category, refresh: refresh);
-                            },
-                            icon: Icon(Icons.add),
-                            label: Text("Ajouter un article"))
-                  ],
-                ),
-              ),
-            ));
-  }
-
-  static Future<void> openAddCategoryDialog(BuildContext context,
-      {Category parent, void Function(void Function() fn) refresh}) async {
-    return showDialog(
-        context: context,
-        builder: (currentContext) {
-          String inputDescription = "", inputTitle = "";
-          return AlertDialog(
-            scrollable: true,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-            elevation: 10,
-            title: Title(
-              child: Text(
-                "Ajouter une ${parent == null ? "" : "sous "}categorie",
-                style: getAppStyles.tsHeader2,
-              ),
-              color: getAppColors.primary,
-              title: "Ajouter une ${parent == null ? "" : "sous "}categorie",
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  decoration: InputDecoration(labelText: "Titre"),
-                  style: getAppStyles.tsBody2,
-                  onChanged: (txt) => inputTitle = txt,
-                ),
-                SizedBox(
-                  height: 15,
-                ),
-                TextField(
-                  decoration: InputDecoration(labelText: "Description"),
-                  style: getAppStyles.tsBody2,
-                  onChanged: (txt) => inputDescription = txt,
-                ),
-                SizedBox(
-                  height: 15,
-                ),
-              ],
-            ),
-            actions: [
-              FlatButton.icon(
-                onPressed: () {
-                  Navigator.pop(currentContext);
-                },
-                icon: Icon(Icons.cancel_outlined),
-                label: Text("Annuler"),
-                color: getAppColors.primary,
-              ),
-              FlatButton.icon(
-                onPressed: () {
-                  listCategories.add(Category.fromMap({
-                    Category.KEY_id: Random().nextInt(100000),
-                    Category.KEY_parentId: parent?.id,
-                    Category.KEY_title: inputTitle,
-                    Category.KEY_description: inputDescription,
-                  }));
-                  Navigator.pop(currentContext);
-                  refresh?.call(() {});
-                },
-                icon: Icon(Icons.check),
-                label: Text("Effectuer"),
-                color: getAppColors.secondary,
-              )
-            ],
-          );
-        });
-  }
-
-  static Future openAddStoreDialog(BuildContext context, {void Function(void Function() fn) refresh}) async {
+  static Future openAddStoreDialog(BuildContext context) async {
     return showDialog(
         context: context,
         builder: (currentContext) {
@@ -206,7 +90,6 @@ class Common {
                     Store.KEY_title: inputTitle,
                     Store.KEY_description: inputDescription,
                   });
-                  refresh?.call(() {});
                 },
                 icon: Icon(Icons.check),
                 label: Text("Effectuer"),
@@ -217,12 +100,92 @@ class Common {
         });
   }
 
-  static void openAddArticleDialog(BuildContext context, Category category,
-      {void Function(void Function() fn) refresh}) async {
-    showDialog(
+  static Future openAddCategoriesDialog(BuildContext context, [isSubCategory]) async {
+    return showDialog(
+        context: context,
+        builder: (currentContext) {
+          String inputDescription = "", inputTitle = "";
+          final descriptionNode = FocusNode();
+          final streamCtrl = StreamController<String>.broadcast();
+          return AlertDialog(
+            scrollable: true,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+            elevation: 10,
+            title: Title(
+              child: Text(
+                "Ajouter une ${isSubCategory == true ? "Sous " : ""}Categorie",
+                style: getAppStyles.tsHeader2,
+              ),
+              color: getAppColors.primary,
+              title: "Ajouter une ${isSubCategory == true ? "Sous " : ""}Categorie",
+            ),
+            content: Toast(
+              message: "",
+              decoration: BoxDecoration(color: Colors.red),
+              showAsTooltip: true,
+              toastStreamHandler: streamCtrl.stream,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    decoration: InputDecoration(labelText: "Titre"),
+                    style: getAppStyles.tsBody2,
+                    onSubmitted: (str) => descriptionNode.requestFocus(),
+                    onChanged: (txt) => inputTitle = txt.trim(),
+                  ),
+                  SizedBox(
+                    height: 15,
+                  ),
+                  TextField(
+                    focusNode: descriptionNode,
+                    decoration: InputDecoration(labelText: "Description"),
+                    style: getAppStyles.tsBody2,
+                    onChanged: (txt) => inputDescription = txt.trim(),
+                  ),
+                  SizedBox(
+                    height: 15,
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              FlatButton.icon(
+                onPressed: () {
+                  streamCtrl.close();
+                  Navigator.pop(currentContext);
+                },
+                icon: Icon(Icons.cancel_outlined),
+                label: Text("Annuler"),
+                color: getAppColors.primary,
+              ),
+              FlatButton.icon(
+                onPressed: () {
+                  if (inputTitle.isEmpty || inputDescription.isEmpty) {
+                    streamCtrl.add("Veuillez entrer tout les champs");
+                    return;
+                  }
+                  streamCtrl.close();
+                  Navigator.pop(currentContext, {
+                    Category.KEY_title: inputTitle,
+                    Category.KEY_description: inputDescription,
+                  });
+                },
+                icon: Icon(Icons.check),
+                label: Text("Effectuer"),
+                color: getAppColors.secondary,
+              )
+            ],
+          );
+        });
+  }
+
+  static Future openAddArticleDialog(BuildContext context) async {
+    return showDialog(
         context: context,
         builder: (currentContext) {
           String inputDescription = "", inputTitle = "", inputMarque = "";
+          final descriptionNode = FocusNode(), markNode = FocusNode();
+          final streamCtrl = StreamController<String>.broadcast();
           return AlertDialog(
             scrollable: true,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -235,35 +198,49 @@ class Common {
               color: getAppColors.primary,
               title: "Ajouter un Article",
             ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  decoration: InputDecoration(labelText: "Titre"),
-                  style: getAppStyles.tsBody2,
-                  onChanged: (txt) => inputTitle = txt,
-                ),
-                SizedBox(
-                  height: 5,
-                ),
-                TextField(
-                  decoration: InputDecoration(labelText: "Description"),
-                  style: getAppStyles.tsBody2,
-                  onChanged: (txt) => inputDescription = txt,
-                ),
-                SizedBox(
-                  height: 5,
-                ),
-                TextField(
-                  decoration: InputDecoration(labelText: "Marque"),
-                  style: getAppStyles.tsBody2,
-                  onChanged: (txt) => inputMarque = txt,
-                ),
-              ],
+            content: Toast(
+              message: "",
+              decoration: BoxDecoration(color: Colors.red),
+              showAsTooltip: true,
+              toastStreamHandler: streamCtrl.stream,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    decoration: InputDecoration(labelText: "Titre"),
+                    style: getAppStyles.tsBody2,
+                    onSubmitted: (str) => descriptionNode.requestFocus(),
+                    onChanged: (txt) => inputTitle = txt.trim(),
+                  ),
+                  SizedBox(
+                    height: 15,
+                  ),
+                  TextField(
+                    focusNode: descriptionNode,
+                    onSubmitted: (str) => markNode.requestFocus(),
+                    decoration: InputDecoration(labelText: "Description"),
+                    style: getAppStyles.tsBody2,
+                    onChanged: (txt) => inputDescription = txt.trim(),
+                  ),
+                  SizedBox(
+                    height: 15,
+                  ),
+                  TextField(
+                    focusNode: markNode,
+                    decoration: InputDecoration(labelText: "Marque"),
+                    style: getAppStyles.tsBody2,
+                    onChanged: (txt) => inputMarque = txt.trim(),
+                  ),
+                  SizedBox(
+                    height: 15,
+                  ),
+                ],
+              ),
             ),
             actions: [
               FlatButton.icon(
                 onPressed: () {
+                  streamCtrl.close();
                   Navigator.pop(currentContext);
                 },
                 icon: Icon(Icons.cancel_outlined),
@@ -272,22 +249,16 @@ class Common {
               ),
               FlatButton.icon(
                 onPressed: () {
-                  final article = Article.fromMap({
-                    Article.KEY_id: Random().nextInt(100000),
-                    Article.KEY_categoryId: category.id,
+                  if (inputTitle.isEmpty || inputDescription.isEmpty || inputMarque.isEmpty) {
+                    streamCtrl.add("Veuillez entrer tout les champs");
+                    return;
+                  }
+                  streamCtrl.close();
+                  Navigator.pop(currentContext, {
                     Article.KEY_title: inputTitle,
                     Article.KEY_description: inputDescription,
                     Article.KEY_marque: inputMarque,
                   });
-                  listArticles.add(article);
-                  listStock.add(Stock.fromMap({
-                    Stock.KEY_id: Random().nextInt(100000),
-                    Stock.KEY_count: 0,
-                    Stock.KEY_articleId: article.id,
-                    Stock.KEY_storeId: currentStore.id,
-                  }));
-                  Navigator.pop(currentContext);
-                  refresh?.call(() {});
                 },
                 icon: Icon(Icons.check),
                 label: Text("Effectuer"),
