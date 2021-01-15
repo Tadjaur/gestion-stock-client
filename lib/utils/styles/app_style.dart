@@ -5,13 +5,13 @@ import 'package:flutter/material.dart';
 AppStyles getAppStyles = AppStyles();
 
 class AppStyles {
-  final _CustomTextStyle tsBody2;
-  final _CustomTextStyle tsBody1;
   final _CustomTextStyle tsBody;
-  final _CustomTextStyle tsHeader3;
-  final _CustomTextStyle tsHeader2;
-  final _CustomTextStyle tsHeader1;
+  final _CustomTextStyle tsBody1;
+  final _CustomTextStyle tsBody2;
   final _CustomTextStyle tsHeader;
+  final _CustomTextStyle tsHeader1;
+  final _CustomTextStyle tsHeader2;
+  final _CustomTextStyle tsHeader3;
 
   AppStyles()
       : this.tsBody = _CustomTextStyle(fontSize: 13, fontWeight: FontWeight.w100),
