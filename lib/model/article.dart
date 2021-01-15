@@ -2,7 +2,7 @@ class Article {
   static const KEY_title = "title";
   static const KEY_description = "description";
   static const KEY_id = "id";
-  static const KEY_categoryId = "categoryId";
+  static const KEY_categoryId = "categoryID";
   static const KEY_marque = "mark";
   static const KEY_img = "image";
   final String title;

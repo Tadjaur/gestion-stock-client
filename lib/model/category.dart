@@ -2,11 +2,12 @@ class Category {
   static const KEY_id = "id";
   static const KEY_title = "title";
   static const KEY_description = "description";
-  static const KEY_parentId = "parentId";
+  static const KEY_parentId = "parentID";
   final int id;
   final String title;
   final String description;
   final int parentId;
+  Category parent;
 
   Category.fromMap(Map<String, dynamic> map)
       : assert(map != null && map.isNotEmpty),
