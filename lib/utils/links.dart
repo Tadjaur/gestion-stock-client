@@ -5,14 +5,18 @@ mixin AppAssetsLink {
 }
 
 mixin AppLink {
-  static const host = kReleaseMode ? "sinoptique.com" : "192.168.88.139";
-  static const protocol = "http";
-  static const port = kReleaseMode ? 8083 : 8888;
-  static const server = "$protocol://$host:$port/gestion_stock";
-  static const getStore = "$server/store/get";
-  static const addStore = "$server/store/add";
-  static const getArticle = "$server/article/get";
+  // PRIVATE
+  static const _host = kReleaseMode ? "sinoptique.com" : "192.168.43.156";
+  static const _protocol = "http";
+  static const _port = kReleaseMode ? 8083 : 8888;
+  // PUBLIC
+  static const server = "$_protocol://$_host:$_port/gestion_stock";
   static const addArticle = "$server/article/add";
-  static const getCategory = "$server/category/get";
   static const addCategory = "$server/category/add";
+  static const addOperation = "$server/operation/add";
+  static const addStore = "$server/store/add";
+  static String getArticle(id) => "$server/article/get/$id";
+  static const getCategory = "$server/category/get";
+  static const getStock = "$server/stock/get";
+  static const getStore = "$server/store/get";
 }
