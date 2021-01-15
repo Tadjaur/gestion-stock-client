@@ -1,11 +1,9 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:stock_manager/model/article.dart';
 import 'package:stock_manager/model/category.dart';
 import 'package:stock_manager/model/operation.dart';
-import 'package:stock_manager/model/stock.dart';
 import 'package:stock_manager/model/store.dart';
 import 'package:stock_manager/utils/colors/app_color.dart';
 import 'package:stock_manager/utils/styles/app_style.dart';
@@ -15,8 +13,7 @@ class Common {
   static final listCategories = <Category>[];
   static final listArticles = <Article>[];
   static final listOperations = <Operation>[];
-  // static final listStock = <Stock>[];
-  static final listStock = {"store": {}, "c1": {}, "c2": {}};
+  static final listStock = {"store": {}, "c1": {}, "c2": {}, "a": {}};
   static Store currentStore;
 
   static final List<Store> listStores = <Store>[];
@@ -269,12 +266,13 @@ class Common {
         });
   }
 
-  static void openAddArticleItemDialog(BuildContext context, Article article,
-      {void Function(void Function() fn) refresh}) {
-    showDialog(
+  static Future openAddArticleItemDialog(BuildContext context, Article article,
+      {void Function(void Function() fn) refresh}) async {
+    return showDialog(
         context: context,
         builder: (currentContext) {
           int inputCount;
+          final streamCtrl = StreamController<String>.broadcast();
           int selectedOperation = 1;
           return AlertDialog(
             scrollable: true,
@@ -282,51 +280,58 @@ class Common {
             elevation: 10,
             title: Title(
               child: Text(
-                "Ajouter un Article",
+                "+/- ${article.title}",
                 style: getAppStyles.tsHeader2,
               ),
               color: getAppColors.primary,
-              title: "Ajouter un Article",
+              title: "+/- ${article.title}",
             ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    Text("Action"),
-                    Expanded(
-                      child: StatefulBuilder(builder: (context, refresh) {
-                        return DropdownButton(
-                            value: selectedOperation,
-                            items: [
-                              DropdownMenuItem(
-                                child: Text("Ajouter"),
-                                value: 1,
-                                onTap: () => selectedOperation = 1,
-                              ),
-                              if (getCount(article) > 0)
+            content: Toast(
+              message: "",
+              decoration: BoxDecoration(color: Colors.red),
+              showAsTooltip: true,
+              toastStreamHandler: streamCtrl.stream,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Text("Action: "),
+                      Expanded(
+                        child: StatefulBuilder(builder: (context, refresh) {
+                          return DropdownButton(
+                              value: selectedOperation,
+                              items: [
                                 DropdownMenuItem(
-                                  child: Text("Suprimer"),
-                                  value: -1,
-                                  onTap: () => selectedOperation = -1,
+                                  child: Text("Ajouter"),
+                                  value: 1,
+                                  onTap: () => selectedOperation = 1,
                                 ),
-                            ],
-                            onChanged: (value) => refresh(() {}));
-                      }),
-                    ),
-                  ],
-                ),
-                TextField(
-                  decoration: InputDecoration(labelText: "Quantite"),
-                  style: getAppStyles.tsBody2,
-                  keyboardType: TextInputType.numberWithOptions(),
-                  onChanged: (txt) => inputCount = int.tryParse(txt.toString()),
-                ),
-              ],
+                                if ((listStock["a"][article.id] ?? 0) > 0)
+                                  DropdownMenuItem(
+                                    child: Text("Suprimer"),
+                                    value: -1,
+                                    onTap: () => selectedOperation = -1,
+                                  ),
+                              ],
+                              onChanged: (value) => refresh(() {}));
+                        }),
+                      ),
+                    ],
+                  ),
+                  TextField(
+                    decoration: InputDecoration(labelText: "Quantite"),
+                    style: getAppStyles.tsBody2,
+                    keyboardType: TextInputType.numberWithOptions(),
+                    onChanged: (txt) => inputCount = int.tryParse(txt.toString()),
+                  ),
+                ],
+              ),
             ),
             actions: [
               FlatButton.icon(
                 onPressed: () {
+                  streamCtrl.close();
                   Navigator.pop(currentContext);
                 },
                 icon: Icon(Icons.cancel_outlined),
@@ -335,28 +340,12 @@ class Common {
               ),
               FlatButton.icon(
                 onPressed: () {
-                  if (inputCount == null || inputCount == 0)
-                    listOperations.add(Operation.fromMap({
-                      Operation.KEY_id: Random().nextInt(100000),
-                      Operation.KEY_date: DateTime.now(),
-                      Operation.KEY_action: selectedOperation,
-                      Operation.KEY_count: inputCount,
-                      Operation.KEY_storeId: currentStore.id,
-                      Operation.KEY_articleId: article.id,
-                    }));
-                  final stock = listStock
-                      .firstWhere((element) => element.storeId == currentStore.id && element.articleId == article.id);
-                  if (stock != null) {
-                    stock.count += selectedOperation * inputCount;
-                  } else {
-                    listStock.add(Stock.fromMap({
-                      Stock.KEY_id: Random().nextInt(100000),
-                      Stock.KEY_count: inputCount,
-                      Stock.KEY_articleId: article.id,
-                      Stock.KEY_storeId: currentStore.id,
-                    }));
+                  if (inputCount == null) {
+                    streamCtrl.add("Veuillez entrer un nombre valide");
+                    return;
                   }
-                  Navigator.pop(currentContext);
+                  streamCtrl.close();
+                  Navigator.pop(currentContext, {"input": inputCount, "op": selectedOperation});
                   refresh?.call(() {});
                 },
                 icon: Icon(Icons.check),
@@ -366,12 +355,5 @@ class Common {
             ],
           );
         });
-  }
-
-  static int getCount(Article article) {
-    final items = Common.listStock
-        .where((element) => element.articleId == article.id && element.storeId == Common.currentStore.id);
-    if (items.length == 0) return 0;
-    return items.first.count;
   }
 }
