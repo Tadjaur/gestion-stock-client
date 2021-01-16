@@ -9,6 +9,8 @@ import 'package:stock_manager/utils/colors/app_color.dart';
 import 'package:stock_manager/utils/styles/app_style.dart';
 import 'package:stock_manager/widgets/toast.dart';
 
+final RouteObserver<PageRoute> defaultRouteObserver = RouteObserver<PageRoute>();
+
 class Common {
   static final listCategories = <Category>[];
   static final listArticles = <Article>[];
@@ -272,6 +274,7 @@ class Common {
         context: context,
         builder: (currentContext) {
           int inputCount;
+          DateTime date = DateTime.now();
           final streamCtrl = StreamController<String>.broadcast();
           int selectedOperation = 1;
           return AlertDialog(
@@ -325,6 +328,31 @@ class Common {
                     keyboardType: TextInputType.numberWithOptions(),
                     onChanged: (txt) => inputCount = int.tryParse(txt.toString()),
                   ),
+                  StatefulBuilder(builder: (context, reload) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      child: FlatButton.icon(
+                        onPressed: () async {
+                          date = await showDatePicker(
+                                  context: context,
+                                  initialDate: DateTime.now(),
+                                  firstDate: DateTime.now().subtract(Duration(days: 365)),
+                                  lastDate: DateTime.now().add(Duration(days: 365))) ??
+                              date;
+                          reload(() {});
+                        },
+                        icon: Icon(
+                          Icons.date_range,
+                          color: getAppColors.accent,
+                        ),
+                        label: Text(
+                          "Date: ${date.day}/${date.month}/${date.year}",
+                          style: getAppStyles.tsBody1.withValues(color: Colors.white),
+                        ),
+                        color: getAppColors.primary,
+                      ),
+                    );
+                  }),
                 ],
               ),
             ),
@@ -345,7 +373,11 @@ class Common {
                     return;
                   }
                   streamCtrl.close();
-                  Navigator.pop(currentContext, {"input": inputCount, "op": selectedOperation});
+                  Navigator.pop(currentContext, {
+                    "input": inputCount.toString(),
+                    "op": selectedOperation.toString(),
+                    "date": date.toIso8601String()
+                  });
                   refresh?.call(() {});
                 },
                 icon: Icon(Icons.check),
