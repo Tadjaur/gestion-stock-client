@@ -1,12 +1,13 @@
 abstract class Action {
-  static const add = _Action(1);
-  static const remove = _Action(-1);
+  int value;
+  static final add = _Action(1);
+  static final remove = _Action(-1);
 }
 
-class _Action implements Action {
+class _Action extends Action {
   final int value;
 
-  const _Action(this.value);
+  _Action(this.value);
 
   @override
   bool operator ==(Object other) => toString() == other.toString();
@@ -21,8 +22,8 @@ class _Action implements Action {
 class Operation {
   static const KEY_id = "id";
   static const KEY_action = "action";
-  static const KEY_storeId = "storeId";
-  static const KEY_articleId = "articleId";
+  static const KEY_storeId = "storeID";
+  static const KEY_articleId = "articleID";
   static const KEY_count = "count";
   static const KEY_date = "date";
   final int id;

@@ -10,13 +10,13 @@ import 'package:stock_manager/utils/styles/app_style.dart';
 import 'package:stock_manager/utils/utils.dart';
 import 'package:stock_manager/widgets/widgets_util.dart';
 
-class StorePage extends StatefulWidget {
-  static const id = "StorePage";
+class OperationsPage extends StatefulWidget {
+  static const id = "OperationsPage";
   @override
-  _StorePageState createState() => _StorePageState();
+  _OperationsPageState createState() => _OperationsPageState();
 }
 
-class _StorePageState extends State<StorePage> {
+class _OperationsPageState extends State<OperationsPage> {
   List<Widget> _stores = [];
 
   @override
@@ -33,7 +33,7 @@ class _StorePageState extends State<StorePage> {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          final res = await Common.openAddStoreDialog(context, refresh: setState);
+          final res = await Common.openAddStoreDialog(context);
           if (res is Map) {
             bool canRemoveLoader = false;
             showDialog(
@@ -127,7 +127,7 @@ class _StorePageState extends State<StorePage> {
               margin: EdgeInsets.all(10),
               child: InkWell(
                 onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => CategoriesPage(store: e)));
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => CategoriesPage()));
                 },
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -163,7 +163,7 @@ class _StorePageState extends State<StorePage> {
           color: getAppColors.secondary,
           child: InkWell(
             onTap: () async {
-              final res = await Common.openAddStoreDialog(context, refresh: setState);
+              final res = await Common.openAddStoreDialog(context);
               if (res is Map) {
                 bool canRemoveLoader = false;
                 showDialog(
