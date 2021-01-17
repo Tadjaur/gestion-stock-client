@@ -50,12 +50,10 @@ class _ArticlesPageState extends State<ArticlesPage> {
         child: Icon(Icons.add),
       ),
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: _articlesWidget,
-            ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: _articlesWidget,
           ),
         ),
       ),
@@ -89,6 +87,7 @@ class _ArticlesPageState extends State<ArticlesPage> {
       }
     }
     final articlesWidget = Common.listArticles
+        .where((element) => element.categoryId == widget.parent.id)
         .map((model) => Card(
               elevation: 10,
               color: getAppColors.primary,
@@ -128,73 +127,78 @@ class _ArticlesPageState extends State<ArticlesPage> {
                       ),
                       SizedBox(width: 5),
                       Text(
-                        Common.listStock["a"][model.id] ?? "0",
+                        "Quantite: ",
+                        style: getAppStyles.tsBody1.withValues(color: Colors.white),
+                      ),
+                      Text(
+                        (getArticleStock(model) ?? 0).toString(),
                         textAlign: TextAlign.center,
                         style: getAppStyles.tsHeader.withValues(color: Colors.white),
                       ),
                       SizedBox(width: 5),
-                      IconButton(
-                        icon: Icon(Icons.add),
-                        onPressed: () async {
-                          final res = await Common.openAddArticleItemDialog(context, model);
-                          if (res is Map) {
-                            bool canRemoveLoader = false;
-                            showDialog(
-                                context: context,
-                                barrierDismissible: false,
-                                builder: (context) {
-                                  Future.doWhile(() async {
-                                    await Future.delayed(Duration(milliseconds: 50));
-                                    if (canRemoveLoader) Navigator.pop(context);
-                                    return !canRemoveLoader;
+                      Builder(builder: (context) {
+                        return IconButton(
+                          icon: Icon(
+                            Icons.add,
+                            size: 30,
+                            color: getAppColors.accent,
+                          ),
+                          onPressed: () async {
+                            final res = await Common.openAddArticleItemDialog(context, model);
+                            if (res is Map) {
+                              bool canRemoveLoader = false;
+                              showDialog(
+                                  context: context,
+                                  barrierDismissible: false,
+                                  builder: (context) {
+                                    Future.doWhile(() async {
+                                      await Future.delayed(Duration(milliseconds: 50));
+                                      if (canRemoveLoader) Navigator.pop(context);
+                                      return !canRemoveLoader;
+                                    });
+                                    return AlertDialog(
+                                      title: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                        children: [
+                                          CircularProgressIndicator(
+                                            backgroundColor: getAppColors.primary,
+                                          ),
+                                          Text("loading...")
+                                        ],
+                                      ),
+                                    );
                                   });
-                                  return AlertDialog(
-                                    title: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                      children: [
-                                        CircularProgressIndicator(
-                                          backgroundColor: getAppColors.primary,
-                                        ),
-                                        Text("loading...")
-                                      ],
-                                    ),
-                                  );
+                              final mpr = http.MultipartRequest("POST", Uri.parse(AppLink.addOperation))
+                                ..fields.addAll({
+                                  Operation.KEY_storeId: Common.currentStore.id.toString(),
+                                  Operation.KEY_articleId: model.id.toString(),
+                                  Operation.KEY_count: res["input"] ?? (throw Error()),
+                                  Operation.KEY_action: res["op"] ?? (throw Error()),
+                                  Operation.KEY_date: res["date"] ?? (throw Error()),
                                 });
-                            final mpr = http.MultipartRequest("POST", Uri.parse(AppLink.addOperation))
-                              ..fields.addAll({
-                                Operation.KEY_storeId: Common.currentStore.id.toString(),
-                                Operation.KEY_articleId: model.id.toString(),
-                                Operation.KEY_count: res["input"] ?? (throw Error()),
-                                Operation.KEY_action: res["op"] ?? (throw Error()),
-                                Operation.KEY_date: res["date"] ?? (throw Error()),
-                              });
-                            final response = await mpr.send();
-                            canRemoveLoader = true;
-                            if (response.statusCode == 200 || response.statusCode == 201) {
-                              final data = cv.json.decode(await response.stream.bytesToString()) as Map;
-                              final op = Operation.fromMap(data);
-                              Common.listOperations.add(op);
-                              Common.listStock["a"][model.id] ??= 0;
-                              Common.listStock["c2"][widget.parent.id] ??= 0;
-                              Common.listStock["c1"][widget.parent.parent.id] ??= 0;
-                              Common.listStock["store"][Common.currentStore.id] ??= 0;
-                              Common.listStock["a"][model.id] += op.count * op.action.value;
-                              Common.listStock["c2"][widget.parent.id] += op.count * op.action.value;
-                              Common.listStock["c1"][widget.parent.parent.id] += op.count * op.action.value;
-                              Common.listStock["store"][Common.currentStore.id] += op.count * op.action.value;
-                            } else {
-                              Scaffold.of(context).showSnackBar(SnackBar(
-                                content: Text(
-                                  "Erreur! veuillez reessayer",
-                                  style: getAppStyles.tsHeader.withValues(color: Colors.white),
-                                ),
-                                backgroundColor: Colors.red,
-                              ));
+                              final response = await mpr.send();
+                              canRemoveLoader = true;
+                              if (response.statusCode == 200 || response.statusCode == 201) {
+                                final data = cv.json.decode(await response.stream.bytesToString()) as Map;
+                                final op = Operation.fromMap(data);
+                                Common.listOperations.add(op);
+                                addArticleStock(model, op.count * op.action.value);
+                              } else {
+                                Scaffold.of(context).showSnackBar(SnackBar(
+                                  content: Text(
+                                    "Erreur! veuillez reessayer",
+                                    style: getAppStyles.tsHeader.withValues(color: Colors.white),
+                                  ),
+                                  backgroundColor: Colors.red,
+                                ));
+                              }
+                              _articlesWidget = await getBottomArticles(true);
+                              setState(() {});
                             }
-                          }
-                        },
-                      )
+                          },
+                        );
+                      })
                     ],
                   ),
                 ),
@@ -277,5 +281,24 @@ class _ArticlesPageState extends State<ArticlesPage> {
     }
     _articlesWidget = await getBottomArticles(true);
     setState(() {});
+  }
+
+  int getArticleStock(Article model) {
+    if (Common.listMapStock[Common.currentStore.id.toString()] == null) return null;
+    if (Common.listMapStock[Common.currentStore.id.toString()]["a"] == null) return null;
+    return Common.listMapStock[Common.currentStore.id.toString()]["a"][model.id.toString()];
+  }
+
+  addArticleStock(Article model, int count) {
+    if (Common.listMapStock[Common.currentStore.id.toString()] == null) {
+      Common.listMapStock[Common.currentStore.id.toString()] = {"count": 0, "c1": {}, "c2": {}, "a": {}};
+    }
+    Common.listMapStock[Common.currentStore.id.toString()]["count"] += count;
+    Common.listMapStock[Common.currentStore.id.toString()]["a"][model.id.toString()] ??= 0;
+    Common.listMapStock[Common.currentStore.id.toString()]["c2"][widget.parent.id.toString()] ??= 0;
+    Common.listMapStock[Common.currentStore.id.toString()]["c1"][widget.parent.parent.id.toString()] ??= 0;
+    Common.listMapStock[Common.currentStore.id.toString()]["a"][model.id.toString()] += count;
+    Common.listMapStock[Common.currentStore.id.toString()]["c2"][widget.parent.id.toString()] += count;
+    Common.listMapStock[Common.currentStore.id.toString()]["c1"][widget.parent.parent.id.toString()] += count;
   }
 }

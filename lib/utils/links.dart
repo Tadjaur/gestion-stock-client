@@ -17,6 +17,7 @@ mixin AppLink {
   static const addStore = "$server/store/add";
   static String getArticle(id) => "$server/article/get/$id";
   static const getCategory = "$server/category/get";
+  static const getOperation = "$server/operation/get";
   static const getStock = "$server/stock/get";
   static const getStore = "$server/store/get";
 }

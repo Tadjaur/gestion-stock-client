@@ -44,61 +44,20 @@ class _StorePageState extends State<StorePage> with RouteAware {
 
   @override
   void didPopNext() {
-    setState(() {});
+    getBottomStore(true).then((value) {
+      _stores = value;
+      setState(() {});
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final res = await Common.openAddStoreDialog(context);
-          if (res is Map) {
-            bool canRemoveLoader = false;
-            showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (context) {
-                  Future.doWhile(() async {
-                    await Future.delayed(Duration(milliseconds: 50));
-                    if (canRemoveLoader) Navigator.pop(context);
-                    return !canRemoveLoader;
-                  });
-                  return AlertDialog(
-                    title: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        CircularProgressIndicator(
-                          backgroundColor: getAppColors.primary,
-                        ),
-                        Text("loading...")
-                      ],
-                    ),
-                  );
-                });
-            final mpr = http.MultipartRequest("POST", Uri.parse(AppLink.addStore))
-              ..fields[Store.KEY_title] = res[Store.KEY_title]
-              ..fields[Store.KEY_description] = res[Store.KEY_description];
-            final response = await mpr.send();
-            canRemoveLoader = true;
-            if (response.statusCode == 200 || response.statusCode == 201) {
-              final data = cv.json.decode(await response.stream.bytesToString()) as Map;
-              Common.listStores.add(Store.fromMap(data));
-            } else {
-              Scaffold.of(context).showSnackBar(SnackBar(
-                content: Text(
-                  "Erreur! veuillez reessayer",
-                  style: getAppStyles.tsHeader.withValues(color: Colors.white),
-                ),
-                backgroundColor: Colors.red,
-              ));
-            }
-          }
-          _stores = await getBottomStore(true);
-          setState(() {});
-        },
-        child: Icon(Icons.add),
+      floatingActionButton: Builder(
+        builder: (context) => FloatingActionButton(
+          onPressed: () => addStore(context),
+          child: Icon(Icons.add),
+        ),
       ),
       drawer: Builder(
           builder: (ctx) => MenuDrawer(
@@ -146,10 +105,8 @@ class _StorePageState extends State<StorePage> with RouteAware {
           final response = await http.get(AppLink.getStock);
           if (response != null && (response.statusCode == 200 || response.statusCode == 201)) {
             final temp = (cv.json.decode(response.body) as Map).cast<String, Map>();
-            Common.listStock["a"] = temp["a"];
-            Common.listStock["c1"] = temp["c1"];
-            Common.listStock["c2"] = temp["c2"];
-            Common.listStock["store"] = temp["store"];
+            Common.listMapStock.clear();
+            Common.listMapStock.addAll(temp);
           }
         } catch (e) {
           //pass
@@ -157,44 +114,46 @@ class _StorePageState extends State<StorePage> with RouteAware {
       }
     }
     final stores = Common.listStores
-        .map((e) => Card(
-              elevation: 10,
-              color: getAppColors.primary,
-              margin: EdgeInsets.all(10),
-              child: InkWell(
-                onTap: () {
-                  Common.currentStore = e;
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => CategoriesPage()));
-                },
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.store,
-                        size: 50,
-                        color: getAppColors.accent,
-                      ),
-                      SizedBox(height: 5),
-                      Text(
-                        e.title,
-                        style: getAppStyles.tsHeader.withValues(color: Colors.white),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: 5),
-                      Text(
-                        e.description,
-                        textAlign: TextAlign.center,
-                        style: getAppStyles.tsBody.withValues(color: Colors.white),
-                      ),
-                      SizedBox(height: 5),
-                      Text(
-                        Common.listStock["store"][e.id] ?? "0",
-                        textAlign: TextAlign.center,
-                        style: getAppStyles.tsHeader.withValues(color: Colors.white),
-                      )
-                    ],
+        .map((e) => Builder(
+              builder: (context) => Card(
+                elevation: 10,
+                color: getAppColors.primary,
+                margin: EdgeInsets.all(10),
+                child: InkWell(
+                  onTap: () {
+                    Common.currentStore = e;
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => CategoriesPage()));
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.store,
+                          size: 50,
+                          color: getAppColors.accent,
+                        ),
+                        SizedBox(height: 5),
+                        Text(
+                          e.title,
+                          style: getAppStyles.tsHeader.withValues(color: Colors.white),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: 5),
+                        Text(
+                          e.description,
+                          textAlign: TextAlign.center,
+                          style: getAppStyles.tsBody.withValues(color: Colors.white),
+                        ),
+                        SizedBox(height: 5),
+                        Text(
+                          ((Common.listMapStock[e.id.toString()] ?? {})["count"] ?? 0).toString(),
+                          textAlign: TextAlign.center,
+                          style: getAppStyles.tsHeader.withValues(color: Colors.white),
+                        )
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -202,69 +161,25 @@ class _StorePageState extends State<StorePage> with RouteAware {
         .toList();
     if (stores.length == 0) {
       stores.add(
-        Card(
-          elevation: 10,
-          color: getAppColors.secondary,
-          child: InkWell(
-            onTap: () async {
-              final res = await Common.openAddStoreDialog(context);
-              if (res is Map) {
-                bool canRemoveLoader = false;
-                showDialog(
-                    context: context,
-                    barrierDismissible: false,
-                    builder: (context) {
-                      Future.doWhile(() async {
-                        await Future.delayed(Duration(milliseconds: 50));
-                        if (canRemoveLoader) Navigator.pop(context);
-                        return !canRemoveLoader;
-                      });
-                      return AlertDialog(
-                        title: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            CircularProgressIndicator(
-                              backgroundColor: getAppColors.primary,
-                            ),
-                            Text("loading...")
-                          ],
-                        ),
-                      );
-                    });
-                final mpr = http.MultipartRequest("POST", Uri.parse(AppLink.addStore))
-                  ..fields[Store.KEY_title] = res[Store.KEY_title]
-                  ..fields[Store.KEY_description] = res[Store.KEY_description];
-                final response = await mpr.send();
-                canRemoveLoader = true;
-                if (response.statusCode == 200 || response.statusCode == 201) {
-                  final data = cv.json.decode(await response.stream.bytesToString()) as Map;
-                  Common.listStores.add(Store.fromMap(data));
-                } else {
-                  Scaffold.of(context).showSnackBar(SnackBar(
-                    content: Text(
-                      "Erreur! veuillez reessayer",
+        Builder(
+          builder: (context) => Card(
+            elevation: 10,
+            color: getAppColors.secondary,
+            child: InkWell(
+              onTap: () => addStore(context),
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.add, size: 50, color: getAppColors.accent),
+                    Text(
+                      "Ajouter un entrepot",
+                      textAlign: TextAlign.center,
                       style: getAppStyles.tsHeader.withValues(color: Colors.white),
-                    ),
-                    backgroundColor: Colors.red,
-                  ));
-                }
-              }
-              _stores = await getBottomStore(true);
-              setState(() {});
-            },
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.add, size: 50, color: getAppColors.accent),
-                  Text(
-                    "Ajouter un entrepot",
-                    textAlign: TextAlign.center,
-                    style: getAppStyles.tsHeader.withValues(color: Colors.white),
-                  )
-                ],
+                    )
+                  ],
+                ),
               ),
             ),
           ),
@@ -272,5 +187,53 @@ class _StorePageState extends State<StorePage> with RouteAware {
       );
     }
     return stores;
+  }
+
+  Future addStore(BuildContext context) async {
+    final res = await Common.openAddStoreDialog(context);
+    if (res is Map) {
+      bool canRemoveLoader = false;
+      showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) {
+            Future.doWhile(() async {
+              await Future.delayed(Duration(milliseconds: 50));
+              if (canRemoveLoader) Navigator.pop(context);
+              return !canRemoveLoader;
+            });
+            return AlertDialog(
+              title: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  CircularProgressIndicator(
+                    backgroundColor: getAppColors.primary,
+                  ),
+                  Text("loading...")
+                ],
+              ),
+            );
+          });
+      final mpr = http.MultipartRequest("POST", Uri.parse(AppLink.addStore))
+        ..fields[Store.KEY_title] = res[Store.KEY_title]
+        ..fields[Store.KEY_description] = res[Store.KEY_description];
+      final response = await mpr.send();
+      canRemoveLoader = true;
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = cv.json.decode(await response.stream.bytesToString()) as Map;
+        Common.listStores.add(Store.fromMap(data));
+      } else {
+        Scaffold.of(context).showSnackBar(SnackBar(
+          content: Text(
+            "Erreur! veuillez reessayer",
+            style: getAppStyles.tsHeader.withValues(color: Colors.white),
+          ),
+          backgroundColor: Colors.red,
+        ));
+      }
+    }
+    _stores = await getBottomStore(true);
+    setState(() {});
   }
 }

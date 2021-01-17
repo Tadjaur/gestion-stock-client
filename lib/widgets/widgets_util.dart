@@ -15,7 +15,7 @@ class Common {
   static final listCategories = <Category>[];
   static final listArticles = <Article>[];
   static final listOperations = <Operation>[];
-  static final listStock = {"store": {}, "c1": {}, "c2": {}, "a": {}};
+  static final listMapStock = {};
   static Store currentStore;
 
   static final List<Store> listStores = <Store>[];
@@ -296,6 +296,7 @@ class Common {
               toastStreamHandler: streamCtrl.stream,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
@@ -310,7 +311,9 @@ class Common {
                                   value: 1,
                                   onTap: () => selectedOperation = 1,
                                 ),
-                                if ((listStock["a"][article.id] ?? 0) > 0)
+                                if (listMapStock[currentStore.id.toString()] is Map &&
+                                    listMapStock[currentStore.id.toString()]["a"] is Map &&
+                                    (listMapStock[currentStore.id.toString()]["a"][article.id.toString()] ?? 0) > 0)
                                   DropdownMenuItem(
                                     child: Text("Suprimer"),
                                     value: -1,
@@ -322,15 +325,21 @@ class Common {
                       ),
                     ],
                   ),
+                  SizedBox(
+                    height: 5,
+                  ),
                   TextField(
                     decoration: InputDecoration(labelText: "Quantite"),
                     style: getAppStyles.tsBody2,
                     keyboardType: TextInputType.numberWithOptions(),
                     onChanged: (txt) => inputCount = int.tryParse(txt.toString()),
                   ),
+                  SizedBox(
+                    height: 10,
+                  ),
                   StatefulBuilder(builder: (context, reload) {
                     return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
                       child: FlatButton.icon(
                         onPressed: () async {
                           date = await showDatePicker(

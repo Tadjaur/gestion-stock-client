@@ -1,3 +1,6 @@
+import 'package:stock_manager/model/article.dart';
+import 'package:stock_manager/model/store.dart';
+
 abstract class Action {
   int value;
   static final add = _Action(1);
@@ -32,6 +35,8 @@ class Operation {
   final int storeId;
   final int count;
   final DateTime date;
+  final Article article;
+  final Store store;
 
   Operation.fromMap(Map<String, dynamic> map)
       : assert(map != null && map.isNotEmpty),
@@ -40,7 +45,9 @@ class Operation {
         count = map[KEY_count],
         articleId = map[KEY_articleId],
         storeId = map[KEY_storeId],
-        date = DateTime.tryParse(map[KEY_storeId]);
+        store = Store.fromMap(map["store"] ?? <String, dynamic>{}),
+        article = Article.fromMap(map["article"] ?? <String, dynamic>{}),
+        date = DateTime.tryParse(map[KEY_date]);
 
   Map<String, dynamic> asMap() => <String, dynamic>{
         KEY_id: id,
