@@ -150,12 +150,12 @@ class MenuDrawer extends StatelessWidget {
                     color: getAppColors.primary, border: BorderDirectional(bottom: BorderSide(color: Colors.white10))),
                 child: operations,
               ),
-              Container(
-                padding: EdgeInsets.only(left: 20, right: 62),
-                decoration: BoxDecoration(
-                    color: getAppColors.primary, border: BorderDirectional(bottom: BorderSide(color: Colors.white10))),
-                child: categories,
-              ),
+              // Container(
+              //   padding: EdgeInsets.only(left: 20, right: 62),
+              //   decoration: BoxDecoration(
+              //       color: getAppColors.primary, border: BorderDirectional(bottom: BorderSide(color: Colors.white10))),
+              //   child: categories,
+              // ),
             ],
           ),
         ),

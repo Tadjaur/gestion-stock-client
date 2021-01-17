@@ -6,7 +6,7 @@ mixin AppAssetsLink {
 
 mixin AppLink {
   // PRIVATE
-  static const _host = kReleaseMode ? "sinoptique.com" : "192.168.43.156";
+  static const _host = kReleaseMode ? "sinoptique.com" : "192.168.100.131";
   static const _protocol = "http";
   static const _port = kReleaseMode ? 8083 : 8888;
   // PUBLIC

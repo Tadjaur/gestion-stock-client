@@ -66,17 +66,11 @@ class _OperationsPageState extends State<OperationsPage> {
           if (tempStores.isNotEmpty) {
             Common.listOperations.clear();
             Common.listOperations.addAll(tempStores);
-            // final Set exist = <int>{};
-            // Common.listOperations.removeWhere((element) {
-            //   if (exist.contains(element.id)) return true;
-            //   exist.add(element.id);
-            //   return false;
-            // });
           }
         }
       }
     }
-    final List<Widget> operationsWidget = Common.listOperations
+    final operationsWidget = Common.listOperations
         .map((model) => Card(
               elevation: 10,
               color: getAppColors.primary,
@@ -97,8 +91,10 @@ class _OperationsPageState extends State<OperationsPage> {
                       ),
                       SizedBox(width: 5),
                       Expanded(
+                        flex: 3,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               "Entrepot: ${model.store.title}",
@@ -109,13 +105,32 @@ class _OperationsPageState extends State<OperationsPage> {
                             Text(
                               "Article: ${model.article.title}",
                               textAlign: TextAlign.center,
-                              style: getAppStyles.tsBody.withValues(color: Colors.white),
+                              style: getAppStyles.tsHeader.withValues(color: Colors.white),
                             ),
                             SizedBox(height: 5),
                             Text(
-                              "Date: ${model.date}",
+                              "le ${model.date.day}/${model.date.month}/${model.date.year} ${model.date.hour}:${model.date.minute}",
                               textAlign: TextAlign.center,
-                              style: getAppStyles.tsBody.withValues(color: Colors.white),
+                              style: getAppStyles.tsHeader.withValues(color: Colors.white),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        flex: 1,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              "${model.action.value == 1 ? "Entrée" : "Sortie"}",
+                              style: getAppStyles.tsHeader.withValues(color: Colors.white),
+                              textAlign: TextAlign.center,
+                            ),
+                            SizedBox(height: 5),
+                            Text(
+                              "${model.count}",
+                              textAlign: TextAlign.center,
+                              style: getAppStyles.tsHeader.withValues(color: Colors.white),
                             ),
                           ],
                         ),
@@ -125,13 +140,15 @@ class _OperationsPageState extends State<OperationsPage> {
                 ),
               ),
             ))
-        .toList();
+        .toList(growable: true);
     if (operationsWidget.length == 0) {
       operationsWidget.add(
-        Text(
-          "Aucune Operation trouvée",
-          textAlign: TextAlign.center,
-          style: getAppStyles.tsHeader.withValues(color: Colors.white),
+        Card(
+          child: Text(
+            "Aucune Operation trouvée",
+            textAlign: TextAlign.center,
+            style: getAppStyles.tsHeader.withValues(color: Colors.white),
+          ),
         ),
       );
     }
