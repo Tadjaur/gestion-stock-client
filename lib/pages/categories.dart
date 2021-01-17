@@ -46,7 +46,10 @@ class _CategoriesPageState extends State<CategoriesPage> with RouteAware {
 
   @override
   void didPopNext() {
-    setState(() {});
+    getCategories(true).then((value) {
+      _categoriesWidget = value;
+      setState(() {});
+    });
   }
 
   @override
@@ -59,10 +62,12 @@ class _CategoriesPageState extends State<CategoriesPage> with RouteAware {
           child: Text(widget.parent?.title ?? "Categories"),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: addCategory,
-        child: Icon(Icons.add),
-      ),
+      floatingActionButton: Builder(builder: (context) {
+        return FloatingActionButton(
+          onPressed: () => addCategory(context),
+          child: Icon(Icons.add),
+        );
+      }),
       body: SafeArea(
         child: Center(
           child: GridView.count(
@@ -147,7 +152,7 @@ class _CategoriesPageState extends State<CategoriesPage> with RouteAware {
                       ),
                       SizedBox(height: 5),
                       Text(
-                        Common.listStock[widget.parent == null ? "c1" : "c2"][e.id] ?? "0",
+                        (_getStockCategory(e) ?? 0).toString(),
                         textAlign: TextAlign.center,
                         style: getAppStyles.tsHeader.withValues(color: Colors.white),
                       )
@@ -162,30 +167,32 @@ class _CategoriesPageState extends State<CategoriesPage> with RouteAware {
         Card(
           elevation: 10,
           color: getAppColors.secondary,
-          child: InkWell(
-            onTap: addCategory,
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.add, size: 50, color: getAppColors.accent),
-                  Text(
-                    "Ajouter une ${widget.parent == null ? "" : "sous "}categorie",
-                    textAlign: TextAlign.center,
-                    style: getAppStyles.tsHeader.withValues(color: Colors.white),
-                  )
-                ],
+          child: Builder(builder: (context) {
+            return InkWell(
+              onTap: () => addCategory(context),
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.add, size: 50, color: getAppColors.accent),
+                    Text(
+                      "Ajouter une ${widget.parent == null ? "" : "sous "}categorie",
+                      textAlign: TextAlign.center,
+                      style: getAppStyles.tsHeader.withValues(color: Colors.white),
+                    )
+                  ],
+                ),
               ),
-            ),
-          ),
+            );
+          }),
         ),
       );
     }
     return stores;
   }
 
-  Future addCategory() async {
+  Future addCategory(BuildContext context) async {
     final res = await Common.openAddCategoriesDialog(context, widget.parent != null);
     if (res is Map) {
       bool canRemoveLoader = false;
@@ -234,5 +241,12 @@ class _CategoriesPageState extends State<CategoriesPage> with RouteAware {
     }
     _categoriesWidget = await getCategories(true);
     setState(() {});
+  }
+
+  int _getStockCategory(Category e) {
+    if (Common.listMapStock[Common.currentStore.id.toString()] == null) return null;
+    if (Common.listMapStock[Common.currentStore.id.toString()][widget.parent == null ? "c1" : "c2"] == null)
+      return null;
+    return Common.listMapStock[Common.currentStore.id.toString()][widget.parent == null ? "c1" : "c2"][e.id.toString()];
   }
 }

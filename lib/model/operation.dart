@@ -40,7 +40,7 @@ class Operation {
         count = map[KEY_count],
         articleId = map[KEY_articleId],
         storeId = map[KEY_storeId],
-        date = DateTime.tryParse(map[KEY_storeId]);
+        date = DateTime.tryParse(map[KEY_date]);
 
   Map<String, dynamic> asMap() => <String, dynamic>{
         KEY_id: id,
